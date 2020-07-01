@@ -27,15 +27,27 @@ router.use(function(req,res,next){
     next();
   });
 // // Main Page
-router.get("/", loggedInOnly, (req, res) => {
-    console.log(req.user.username)
-    res.render("index", { username: req.user.username });
+router.get("/", loggedInOnly, (req, res ,done) => {
+    Content.find((err, result)=>{
+      if(err) {
+        done(err)
+      }
+      console.log(req.user.username)
+      res.render("index", { username: req.user.username , data:result});
+    })
+    
   });
 
 
 router.get('/data' , loggedInOnly, function(req,res){
-    // console.log(req)
+  User.findOneAndRemove({username:"admin"}, (err, result)=>{
+    if(err) {
+      console.log(err)
+    }
     res.json({"address":"서울시 마포구 백범로 18"})
+  })
+    // console.log(req)
+    
 })  
 
 // Login View
@@ -84,13 +96,17 @@ router.post("/signup",function(req,res,next){
     });
   });
 
+router.get('/content', (req, res, next)=>{
+  res.render('insert')
+})
   
 router.post('/content' ,function(req, res){
     
     var contact = new Content()
     contact.title = req.body.title
-    contact.desc = req.body.desc
+    contact.description = req.body.description
     contact.author = req.body.author
+    contact.email = req.body.email
 
     contact.save(function(err) {
         if(err){
@@ -99,14 +115,21 @@ router.post('/content' ,function(req, res){
                 message:err
             })
         } else {
-            res.json({
-                message:"New contact Created",
-                data:contact
-            })
+            res.redirect('/')
         }
     })    
 })
 
+router.post('/delete/:id', (req ,res , next)=>{
+  var id = req.params.id
+  console.log(req.params.id)
+  Content.findOneAndDelete({_id:id} , (err, result)=>{
+    if(err) {
+      next(err)
+    }
+    res.redirect('/')
+  })
+})
 // Logout Handler
 router.all("/logout", function(req, res) {
     req.logout();
